@@ -1,0 +1,33 @@
+version: "3.8"
+
+services:
+  nifi:
+    image: apache/nifi:2.6.0
+    ports:
+      - "8443:8443"
+    environment:
+      NIFI_JVM_HEAP_INIT: "512m"
+      NIFI_JVM_HEAP_MAX: "1512m"
+      NIFI_SENSITIVE_PROPS_KEY: "it-is-not-production-key-change-me"
+      SINGLE_USER_CREDENTIALS_USERNAME: "admin"
+      SINGLE_USER_CREDENTIALS_PASSWORD: "admin1234567890"
+    restart: unless-stopped
+    entrypoint: /bin/bash
+    command: >-
+      -c "
+      . "/opt/nifi/scripts/common.sh";
+      prop_replace 'nifi.flow.configuration.file' "$${NIFI_HOME}/flow-conf/flow.json.gz";
+      prop_replace 'nifi.flow.configuration.archive.dir' "$${NIFI_HOME}/flow-conf/archive";
+      /opt/nifi/scripts/start.sh
+      "
+    volumes:
+      - ./nifi-data/logs:/opt/nifi/nifi-current/logs
+      - ./nifi-data/database_repository:/opt/nifi/nifi-current/database_repository
+      - ./nifi-data/flow-conf:/opt/nifi/nifi-current/flow-conf
+      - ./nifi-data/flowfile_repository:/opt/nifi/nifi-current/flowfile_repository
+      - ./nifi-data/content_repository:/opt/nifi/nifi-current/content_repository
+      - ./nifi-data/provenance_repository:/opt/nifi/nifi-current/provenance_repository
+      - ./nifi-data/python_extensions:/opt/nifi/nifi-current/python_extensions
+      - ./nifi-data/nar_extensions:/opt/nifi/nifi-current/nar_extensions
+    extra_hosts:
+      - pypi.org:0.0.0.0 # disable possible use pip instal inside container
